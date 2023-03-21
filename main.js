@@ -39,7 +39,7 @@ var app = http.createServer(function(request,response){
         if(queryData.id === undefined){
             // 홈페이지 - 쿼리에 id값이 없는경우
             fs.readdir("./data/",function(err,fileList){
-                var title= 'Welcome';
+                var title= '-Welcome-';
                 var description = 'Hello, Node.js'
                 var list = templateList(fileList);
                 
