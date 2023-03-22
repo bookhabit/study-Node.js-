@@ -156,18 +156,23 @@ var app = http.createServer(function(request,response){
           })
       });
     } else if(pathname === '/delete_process'){
+      // 글 삭제 기능 - 서버측
       var body = '';
       request.on('data', function(data){
           body = body + data;
       });
       request.on('end', function(){
           var post = qs.parse(body);
-          var id = post.id;
-          var filteredId = path.parse(id).base;
-          fs.unlink(`data/${filteredId}`, function(error){
-            response.writeHead(302, {Location: `/`});
+          // SQL 쿼리문
+          db.query('DELETE FROM topic WHERE id=?',[post.id],
+          function(error,results){
+            if(error){
+              throw error;
+            }
+            response.writeHead(302, {Location: '/'});
             response.end();
           })
+          
       });
     } else {
       response.writeHead(404);
