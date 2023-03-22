@@ -20,7 +20,9 @@ var app = http.createServer(function(request,response){
     var _url = request.url;
     var queryData = url.parse(_url, true).query;
     var pathname = url.parse(_url, true).pathname;
+    // home페이지
     if(pathname === '/'){
+      // 쿼리의 id값 없는 기본페이지
       if(queryData.id === undefined){
         db.query(`SELECT * FROM topic`, function (error, topics) {
           var title = 'Welcome';
@@ -35,6 +37,7 @@ var app = http.createServer(function(request,response){
           response.end(html);
         });
       } else {
+        // 글 상세보기 페이지 - home페이지 쿼리의 id값 존재
         db.query(`SELECT * FROM topic`, function (error, topics) {
           if(error){
             throw error;
@@ -63,12 +66,14 @@ var app = http.createServer(function(request,response){
           });
           })
       }
-    } else if(pathname === '/create'){
-      fs.readdir('./data', function(error, filelist){
-        var title = 'WEB - create';
-        var list = template.list(filelist);
-        var html = template.HTML(title, list, `
-          <form action="/create_process" method="post">
+    } else if(pathname === '/create'){ 
+      // 글 생성 페이지 - 클라이언트 화면
+      db.query(`SELECT * FROM topic`, function (error, topics) {
+        var title = 'Create';
+        var list = template.list(topics);
+        var html = template.HTML(title, list,
+        `
+        <form action="/create_process" method="post">
             <p><input type="text" name="title" placeholder="title"></p>
             <p>
               <textarea name="description" placeholder="description"></textarea>
@@ -76,25 +81,35 @@ var app = http.createServer(function(request,response){
             <p>
               <input type="submit">
             </p>
-          </form>
-        `, '');
+        </form>
+        `,
+        `<a href="/create">create</a>`
+        );
+        
         response.writeHead(200);
         response.end(html);
       });
     } else if(pathname === '/create_process'){
+      // 글 생성 페이지 - 서버 측 로직
       var body = '';
       request.on('data', function(data){
           body = body + data;
       });
       request.on('end', function(){
-          var post = qs.parse(body);
-          var title = post.title;
-          var description = post.description;
-          fs.writeFile(`data/${title}`, description, 'utf8', function(err){
-            response.writeHead(302, {Location: `/?id=${title}`});
+        var post = qs.parse(body);
+        db.query(`
+          INSERT INTO topic (title, description, created, author_id) 
+            VALUES(?, ?, NOW(), ?)`,
+          [post.title, post.description, 1], 
+          function(error, result){
+            if(error){
+              throw error;
+            }
+            response.writeHead(302, {Location: `/?id=${result.insertId}`});
             response.end();
-          })
-      });
+          }
+        )
+    });
     } else if(pathname === '/update'){
       fs.readdir('./data', function(error, filelist){
         var filteredId = path.parse(queryData.id).base;
