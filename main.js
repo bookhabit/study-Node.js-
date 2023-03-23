@@ -1,20 +1,9 @@
 var http = require('http');
-var fs = require('fs');
 var url = require('url');
 var qs = require('querystring');
 var template = require('./lib/template.js');
-var path = require('path');
-var sanitizeHtml = require('sanitize-html');
-var mysql = require('mysql');
-
-var db = mysql.createConnection({
-  host     : 'localhost',
-  user     : 'root',
-  password : '2719',
-  database : 'opentutorials'
-});
- 
-db.connect(); // 데이터베이스 연결
+var db = require('./lib/db')
+var topic = require('./lib/topic')
 
 var app = http.createServer(function(request,response){
     var _url = request.url;
@@ -24,18 +13,7 @@ var app = http.createServer(function(request,response){
     if(pathname === '/'){
       // 쿼리의 id값 없는 기본페이지
       if(queryData.id === undefined){
-        db.query(`SELECT * FROM topic`, function (error, topics) {
-          var title = 'Welcome';
-          var description = 'Hello, Node.js';
-          var list = template.list(topics);
-          var html = template.HTML(title, list,
-          `<h2>${title}</h2>${description}`,
-          `<a href="/create">create</a>`
-          );
-          
-          response.writeHead(200);
-          response.end(html);
-        });
+        topic.home(response);
       } else {
         // 글 상세보기 페이지 - home페이지 쿼리의 id값 존재
         db.query(`SELECT * FROM topic`, function (error, topics) {
